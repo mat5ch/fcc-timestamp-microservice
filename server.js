@@ -8,23 +8,44 @@ var app = express();
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 // so that your API is remotely testable by FCC 
 var cors = require('cors');
-app.use(cors({optionSuccessStatus: 200}));  // some legacy browsers choke on 204
+
+// Only allow cors with FCC
+var corsOptions = {
+  origin: 'https://www.freecodecamp.org',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+app.use(cors(corsOptions));
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'));
 
 // http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (req, res) {
+app.get('/', function (req, res) {
   res.sendFile(__dirname + '/views/index.html');
 });
 
-
-// your first API endpoint... 
-app.get("/api/hello", function (req, res) {
-  res.json({greeting: 'hello API'});
+app.get('/api/timestamp/', function (req, res) {
+  let date_string = req.query['date_string'];
+  // trigger new Date() when no date_string is given
+  if (!date_string) { 
+    date_string = new Date();
+  }
+  res.redirect('/api/timestamp/' + date_string)
 });
 
-
+app.get('/api/timestamp/:date_string', function (req, res) {
+  const date_string = req.params['date_string'];
+  let new_date = '';
+  if (/^[0-9]+$/.test(date_string)) {
+    new_date = new Date(Number.parseInt(date_string));
+  }
+  else {  
+    new_date = new Date(date_string);
+  }
+  // check if date could be parsed
+  const error = new_date.toUTCString() === 'Invalid Date';
+  res.send({'unix': error ? 'error' : new_date.valueOf(), 'utc': new_date.toUTCString()});
+});
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT, function () {
